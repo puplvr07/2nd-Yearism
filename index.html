@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DY Weekly Schedule</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <div class="page">
+      <section class="hero">
+        <div>
+          <span class="pill">Weekly planner</span>
+          <h1>Stay on top of your week</h1>
+          <p>
+            Organize meetings, deadlines, and personal plans in one clean view.
+            This simple home page gives your schedule app a polished first impression.
+          </p>
+          <div class="actions">
+            <button class="primary">Open schedule</button>
+            <button class="secondary">View this week</button>
+            </div>
+          </div>
+
+        <div class="card today-box">
+          <div class="pill">Today</div>
+          <div class="date" id="todayDate">Loading...</div>
+          <p>3 tasks due soon • 2 meetings • 1 personal goal</p>
+        </div>
+      </section>
+
+      <section class="week-grid" id="weekGrid"></section>
+
+      <section class="stats">
+        <div class="card stat">
+          <strong>7</strong>
+          <span>Days planned</span>
+        </div>
+        <div class="card stat">
+          <strong>12</strong>
+          <span>Upcoming items</span>
+        </div>
+        <div class="card stat">
+          <strong>85%</strong>
+          <span>On track</span>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const days = [
+        { name: 'Mon', task: 'Design review' },
+        { name: 'Tue', task: 'Project sync' },
+        { name: 'Wed', task: 'Focus block' },
+        { name: 'Thu', task: 'Client call' },
+        { name: 'Fri', task: 'Wrap-up tasks' },
+        { name: 'Sat', task: 'Gym + errands' },
+        { name: 'Sun', task: 'Reset week' }
+      ];
+
+      const weekGrid = document.getElementById('weekGrid');
+      const todayDate = document.getElementById('todayDate');
+
+      const today = new Date();
+      const options = { weekday: 'long', month: 'long', day: 'numeric' };
+      todayDate.textContent = today.toLocaleDateString('en-US', options);
+
+      days.forEach((day, index) => {
+        const card = document.createElement('div');
+        card.className = 'day' + (index === (today.getDay() + 6) % 7 ? ' today' : '');
+        card.innerHTML = `
+          <div class="day-name">${day.name}</div>
+          <div class="task">${day.task}</div>
+        `;
+        weekGrid.appendChild(card);
+      });
+    </script>
+  </body>
+</html>
