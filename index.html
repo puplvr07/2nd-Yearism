@@ -17,10 +17,10 @@
             This simple home page gives your schedule app a polished first impression.
           </p>
           <div class="actions">
-            <button class="primary">Open schedule</button>
+            <button id="openCustomizer" class="primary">Open schedule</button>
             <button class="secondary">View this week</button>
-            </div>
           </div>
+        </div>
 
         <div class="card today-box">
           <div class="pill">Today</div>
@@ -30,6 +30,48 @@
       </section>
 
       <section class="week-grid" id="weekGrid"></section>
+
+      <section class="customizer" id="customizer" aria-hidden="true">
+        <div class="customizer-panel">
+          <header>
+            <div>
+              <h2>Customize schedule</h2>
+              <p>Pick colors or upload a background image for the whole page.</p>
+            </div>
+            <button id="closeCustomizer" class="icon-button" aria-label="Close customization">×</button>
+          </header>
+
+          <div class="customizer-control">
+            <label for="bgColor">Page background</label>
+            <input type="color" id="bgColor" value="#f4f7fb" />
+          </div>
+          <div class="customizer-control">
+            <label for="cardColor">Card background</label>
+            <input type="color" id="cardColor" value="#ffffff" />
+          </div>
+          <div class="customizer-control">
+            <label for="accentColor">Accent color</label>
+            <input type="color" id="accentColor" value="#2563eb" />
+          </div>
+          <div class="customizer-control">
+            <label for="textColor">Text color</label>
+            <input type="color" id="textColor" value="#1f2937" />
+          </div>
+          <div class="customizer-control">
+            <label for="imageUrl">Background image URL</label>
+            <input type="url" id="imageUrl" placeholder="https://example.com/image.jpg" />
+          </div>
+          <div class="customizer-control">
+            <label for="imageFile">Upload background image</label>
+            <input type="file" id="imageFile" accept="image/*" />
+          </div>
+
+          <div class="customizer-actions">
+            <button id="resetCustomizer" class="secondary" type="button">Reset defaults</button>
+            <button id="doneCustomizer" class="primary" type="button">Done</button>
+          </div>
+        </div>
+      </section>
 
       <section class="stats">
         <div class="card stat">
@@ -47,33 +89,6 @@
       </section>
     </div>
 
-    <script>
-      const days = [
-        { name: 'Mon', task: 'Design review' },
-        { name: 'Tue', task: 'Project sync' },
-        { name: 'Wed', task: 'Focus block' },
-        { name: 'Thu', task: 'Client call' },
-        { name: 'Fri', task: 'Wrap-up tasks' },
-        { name: 'Sat', task: 'Gym + errands' },
-        { name: 'Sun', task: 'Reset week' }
-      ];
-
-      const weekGrid = document.getElementById('weekGrid');
-      const todayDate = document.getElementById('todayDate');
-
-      const today = new Date();
-      const options = { weekday: 'long', month: 'long', day: 'numeric' };
-      todayDate.textContent = today.toLocaleDateString('en-US', options);
-
-      days.forEach((day, index) => {
-        const card = document.createElement('div');
-        card.className = 'day' + (index === (today.getDay() + 6) % 7 ? ' today' : '');
-        card.innerHTML = `
-          <div class="day-name">${day.name}</div>
-          <div class="task">${day.task}</div>
-        `;
-        weekGrid.appendChild(card);
-      });
-    </script>
+    <script src="script.js"></script>
   </body>
 </html>
