@@ -41,6 +41,16 @@
             <button id="closeCustomizer" class="icon-button" aria-label="Close customization">×</button>
           </header>
 
+          <div class="customizer-login">
+            <label for="loginEmail">Email login</label>
+            <div class="login-row">
+              <input type="email" id="loginEmail" placeholder="you@example.com" />
+              <button id="loginButton" class="primary" type="button">Login</button>
+            </div>
+            <div class="login-status" id="loginStatus">Not signed in</div>
+            <button id="logoutButton" class="secondary" type="button">Logout</button>
+          </div>
+
           <div class="customizer-control">
             <label for="bgColor">Page background</label>
             <input type="color" id="bgColor" value="#f4f7fb" />
@@ -68,7 +78,8 @@
 
           <div class="customizer-actions">
             <button id="resetCustomizer" class="secondary" type="button">Reset defaults</button>
-            <button id="doneCustomizer" class="primary" type="button">Done</button>
+            <button id="saveCustomizer" class="primary" type="button">Save settings</button>
+            <button id="doneCustomizer" class="secondary" type="button">Done</button>
           </div>
         </div>
       </section>

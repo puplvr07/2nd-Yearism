@@ -161,6 +161,36 @@
         font-size: 0.95rem;
       }
 
+      .customizer-login {
+        display: grid;
+        gap: 12px;
+        margin-bottom: 20px;
+        padding: 16px;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: #f9fafb;
+      }
+
+      .login-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .login-row input {
+        flex: 1;
+        min-width: 180px;
+      }
+
+      .login-status {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      #logoutButton {
+        width: 100%;
+      }
+
       .icon-button {
         background: transparent;
         border: none;
