@@ -86,6 +86,7 @@
 
       button:active {
         transform: translateY(0);
+        filter: brightness(0.9);
       }
 
       .primary {
@@ -94,7 +95,7 @@
       }
 
       .primary:hover {
-        background: color-mix(in srgb, var(--accent) 85%, black);
+        filter: brightness(0.9);
         box-shadow: 0 8px 18px rgba(37, 99, 235, 0.28);
       }
 
