@@ -39,23 +39,90 @@ const defaultTheme = {
 const theme = { ...defaultTheme };
 let currentUser = null;
 
+// --- Storage availability check -------------------------------------
+// localStorage can silently fail (or reset between sessions) if the page
+// is opened as a local file in some browsers, viewed inside a sandboxed
+// preview/iframe, or opened in a private/incognito window. Detect that
+// up front so we can tell the user instead of quietly losing their data.
+function isStorageAvailable() {
+  try {
+    const testKey = '__planner_storage_test__';
+    localStorage.setItem(testKey, '1');
+    localStorage.removeItem(testKey);
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
+const storageAvailable = isStorageAvailable();
+
 const today = new Date();
 const options = { weekday: 'long', month: 'long', day: 'numeric' };
 todayDate.textContent = today.toLocaleDateString('en-US', options);
 
 const todayIndex = (today.getDay() + 6) % 7;
 
+// --- Task customization -----------------------------------------------
+const TASKS_KEY = 'planner-tasks';
+
+function loadTasks() {
+  const fallback = days.map((d) => d.task);
+  if (!storageAvailable) return fallback;
+  try {
+    const stored = localStorage.getItem(TASKS_KEY);
+    if (!stored) return fallback;
+    const parsed = JSON.parse(stored);
+    if (Array.isArray(parsed) && parsed.length === days.length) return parsed;
+    return fallback;
+  } catch (err) {
+    console.error('Failed to load saved tasks', err);
+    return fallback;
+  }
+}
+
+function saveTasks(tasks) {
+  if (!storageAvailable) return;
+  try {
+    localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+  } catch (err) {
+    console.error('Failed to save tasks', err);
+  }
+}
+
+let taskValues = loadTasks();
+
 days.forEach((day, index) => {
   const card = document.createElement('div');
   card.className = 'day' + (index === todayIndex ? ' today' : '');
   card.innerHTML = `
     <div class="day-name">${day.name}</div>
-    <div class="task">${day.task}</div>
+    <div class="task" contenteditable="true" spellcheck="false" data-index="${index}" title="Click to edit">${taskValues[index]}</div>
   `;
 
   card.addEventListener('click', () => {
     weekGrid.querySelectorAll('.day').forEach((item) => item.classList.remove('selected'));
     card.classList.add('selected');
+  });
+
+  const taskEl = card.querySelector('.task');
+
+  // Don't let editing the task text also trigger card selection weirdness
+  taskEl.addEventListener('click', (event) => event.stopPropagation());
+
+  taskEl.addEventListener('blur', () => {
+    const idx = Number(taskEl.dataset.index);
+    const value = taskEl.textContent.trim() || day.task;
+    taskValues[idx] = value;
+    taskEl.textContent = value;
+    saveTasks(taskValues);
+  });
+
+  taskEl.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      taskEl.blur();
+    }
   });
 
   weekGrid.appendChild(card);
@@ -108,19 +175,34 @@ function updateThemeProperty(property, value) {
 }
 
 function saveThemeForUser() {
-  if (!currentUser) return;
-  localStorage.setItem(getStorageKey(currentUser), JSON.stringify(theme));
-  localStorage.setItem(getCurrentUserKey(), currentUser);
+  if (!currentUser) return false;
+  if (!storageAvailable) {
+    setLoginStatus('Storage is blocked in this browser/session, so settings will only last until you leave this page.', true);
+    return false;
+  }
+  try {
+    // save theme data for the user
+    localStorage.setItem(getStorageKey(currentUser), JSON.stringify(theme));
+    // also persist who is currently signed in
+    localStorage.setItem(getCurrentUserKey(), currentUser);
+    return true;
+  } catch (err) {
+    console.error('Failed to save theme to localStorage', err);
+    setLoginStatus('Could not save settings (storage full or blocked).', true);
+    return false;
+  }
 }
 
 function loadUserTheme(email) {
-  const stored = localStorage.getItem(getStorageKey(email));
-  if (!stored) return false;
+  if (!storageAvailable) return false;
   try {
+    const stored = localStorage.getItem(getStorageKey(email));
+    if (!stored) return false;
     const saved = JSON.parse(stored);
     Object.assign(theme, { ...defaultTheme, ...saved });
     return true;
-  } catch {
+  } catch (err) {
+    console.error('Failed to load saved theme', err);
     return false;
   }
 }
@@ -157,17 +239,40 @@ function loginUser() {
     return;
   }
 
+  if (!storageAvailable) {
+    // Still let them "sign in" for this session so the rest of the UI works,
+    // but be upfront that nothing will persist.
+    currentUser = email;
+    applyTheme();
+    setCustomizerInputs();
+    setLoginStatus(`Signed in as ${currentUser} (storage blocked — this won't be remembered next time).`, true);
+    return;
+  }
+
   currentUser = email;
-  const loaded = loadUserTheme(currentUser);
+  // persist current user immediately so reloads can detect signed-in user
+  try {
+    localStorage.setItem(getCurrentUserKey(), currentUser);
+  } catch (err) {
+    console.error('Failed to persist current user', err);
+  }
+
+  loadUserTheme(currentUser);
   applyTheme();
   setCustomizerInputs();
-  saveThemeForUser();
-  setLoginStatus(`Signed in as ${currentUser}`);
+  const saved = saveThemeForUser();
+  if (saved) setLoginStatus(`Signed in as ${currentUser}`);
 }
 
 function logoutUser() {
   currentUser = null;
-  localStorage.removeItem(getCurrentUserKey());
+  if (storageAvailable) {
+    try {
+      localStorage.removeItem(getCurrentUserKey());
+    } catch (err) {
+      console.error('Failed to clear current user', err);
+    }
+  }
   setLoginStatus('Not signed in');
 }
 
@@ -176,8 +281,8 @@ function saveSettings() {
     setLoginStatus('Login first to save your settings.', true);
     return;
   }
-  saveThemeForUser();
-  setLoginStatus(`Settings saved for ${currentUser}`);
+  const saved = saveThemeForUser();
+  if (saved) setLoginStatus(`Settings saved for ${currentUser}`);
 }
 
 function resetTheme() {
@@ -188,22 +293,26 @@ function resetTheme() {
 }
 
 function loadCurrentUser() {
-  const stored = localStorage.getItem(getCurrentUserKey());
+  if (!storageAvailable) {
+    setLoginStatus('Storage is blocked in this browser/session — logins and settings won\u2019t be saved here.', true);
+    return;
+  }
+  let stored = null;
+  try {
+    stored = localStorage.getItem(getCurrentUserKey());
+  } catch (err) {
+    console.error('Failed to read current user', err);
+  }
   if (!stored) {
     setLoginStatus('Not signed in');
     return;
   }
   currentUser = stored;
-  const loaded = loadUserTheme(currentUser);
-  if (loaded) {
-    applyTheme();
-    setCustomizerInputs();
-    loginEmail.value = currentUser;
-    setLoginStatus(`Signed in as ${currentUser}`);
-  } else {
-    loginEmail.value = currentUser;
-    setLoginStatus(`Signed in as ${currentUser}`);
-  }
+  loadUserTheme(currentUser);
+  applyTheme();
+  setCustomizerInputs();
+  loginEmail.value = currentUser;
+  setLoginStatus(`Signed in as ${currentUser}`);
 }
 
 openCustomizer.addEventListener('click', openPanel);
