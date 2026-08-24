@@ -111,26 +111,29 @@
             <div class="streak-badge">🔥 5 Day Streak</div>
           </div>
 
-          <!-- Top Stats Row -->
-          <div class="stats-row">
-            <div class="stat-card">
-              <div class="stat-num">25</div>
-              <div class="stat-label">TOTAL TASKS</div>
-            </div>
-            <div class="stat-card stat-progress">
-              <div class="stat-num">48%</div>
-              <div class="stat-label">COMPLETION</div>
-              <div class="progress-track"><div class="progress-bar" style="width: 48%;"></div></div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-num text-success">12</div>
-              <div class="stat-label">TASKS DONE</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-num text-warning">13</div>
-              <div class="stat-label">REMAINING</div>
-            </div>
-          </div>
+         <!-- Replace the top stats row in view-dashboard with this: -->
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-num" id="dashTotalTasks">25</div>
+    <div class="stat-label">TOTAL TASKS</div>
+  </div>
+  <div class="stat-card stat-progress">
+    <div class="stat-num" id="dashPercent">48%</div>
+    <div class="stat-label">COMPLETION</div>
+    <div class="progress-track"><div class="progress-bar" id="dashProgressBar" style="width: 48%;"></div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num text-success" id="dashDoneTasks">12</div>
+    <div class="stat-label">TASKS DONE</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num text-warning" id="dashRemaining">13</div>
+    <div class="stat-label">REMAINING</div>
+  </div>
+</div>
+
+<!-- Ensure the pie chart div has the id: -->
+<div class="css-pie" id="dashPieChart"></div>
 
           <!-- Main Dashboard Grid -->
           <div class="dashboard-grid">
