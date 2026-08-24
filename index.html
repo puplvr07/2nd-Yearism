@@ -1,105 +1,574 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DY Weekly Schedule</title>
-    <link rel="stylesheet" href="style.css">
-  </head>
-  <body>
-    <div class="page">
-      <section class="hero">
-        <div>
-          <span class="pill">Weekly planner</span>
-          <h1>Stay on top of your week</h1>
-          <p>
-            Organize meetings, deadlines, and personal plans in one clean view.
-            This simple home page gives your schedule app a polished first impression.
-          </p>
-          <div class="actions">
-            <button id="openCustomizer" class="primary">Open schedule</button>
-            <button class="secondary">View this week</button>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>T/CKTOCK - Student Task Management</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Collapsible / Floating Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-user">
+        <div class="avatar-wrapper">
+          <div class="avatar-icon">👓</div>
+        </div>
+        <div class="user-info">
+          <h3 id="userNameDisplay">Bogart Batumbakal</h3>
+          <p id="userRoleDisplay">3rd Year Nursing Student</p>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-view="dashboard">
+          <span class="icon">📊</span> <span>Dashboard</span>
+        </button>
+        <button class="nav-item" data-view="todos">
+          <span class="icon">✅</span> <span>To-Do List</span>
+        </button>
+        <button class="nav-item" data-view="due-today">
+          <span class="icon">⏰</span> <span>Tasks Due Today</span>
+        </button>
+        <button class="nav-item" data-view="subjects">
+          <span class="icon">📁</span> <span>Subjects</span>
+        </button>
+        <button class="nav-item" data-view="inbox">
+          <span class="icon">📥</span> <span>Inbox</span>
+        </button>
+        <button class="nav-item" data-view="notebook">
+          <span class="icon">📓</span> <span>Notebook</span>
+        </button>
+        <button class="nav-item" data-view="recently-visited">
+          <span class="icon">🕒</span> <span>Recently Visited</span>
+        </button>
+        <hr class="nav-divider" />
+        <button class="nav-item" id="openCustomizerBtn">
+          <span class="icon">🎨</span> <span>Customize Layout</span>
+        </button>
+        <button class="nav-item" data-view="settings">
+          <span class="icon">⚙️</span> <span>Settings</span>
+        </button>
+        <button class="nav-item" data-view="feedback">
+          <span class="icon">💬</span> <span>Customer Feedback</span>
+        </button>
+        <button class="nav-item" data-view="help">
+          <span class="icon">❓</span> <span>Help</span>
+        </button>
+      </nav>
+
+      <button class="btn-create-floating" id="openCreateModal">
+        <span>+</span> Create New Task
+      </button>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-wrapper">
+      <!-- Top App Bar -->
+      <header class="top-bar">
+        <button class="menu-toggle" id="menuToggle" aria-label="Toggle Menu">
+          <span></span><span></span><span></span>
+        </button>
+        
+        <div class="logo">
+          <span class="logo-t">T</span><span class="logo-check">✓</span><span class="logo-rest">CKT</span>
+          <div class="clock-character">🕒</div>
+          <span class="logo-rest">CK</span>
+        </div>
+
+        <div class="search-bar">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="globalSearch" placeholder="Search tasks, subjects, notes..." autocomplete="off" />
+          
+          <!-- Dropdown search suggestions -->
+          <div class="search-dropdown" id="searchDropdown">
+            <a href="#" data-view="todos">🔍 To-Do List</a>
+            <a href="#" data-modal="create">🔍 Create New Task</a>
+            <a href="#" data-view="dashboard">🔍 Dashboard</a>
+            <a href="#" data-view="subjects">🔍 Subjects</a>
+            <a href="#" data-view="inbox">🔍 Inbox</a>
+            <a href="#" data-action="customizer">🔍 Custom Layout</a>
           </div>
         </div>
 
-        <div class="card today-box">
-          <div class="pill">Today</div>
-          <div class="date" id="todayDate">Loading...</div>
-          <p>3 tasks due soon • 2 meetings • 1 personal goal</p>
-        </div>
-      </section>
+        <div class="top-time" id="currentTimeDisplay">11:11 PM</div>
+      </header>
 
-      <section class="week-grid" id="weekGrid"></section>
+      <!-- View Container (SPA Routing) -->
+      <div class="content-area">
 
-      <section class="customizer" id="customizer" aria-hidden="true">
-        <div class="customizer-panel">
-          <header>
+        <!-- VIEW: DASHBOARD (Default) -->
+        <section class="view-panel active" id="view-dashboard">
+          <div class="dashboard-header">
             <div>
-              <h2>Customize schedule</h2>
-              <p>Pick colors or upload a background image for the whole page.</p>
+              <h2>MAY 04, 2026</h2>
+              <p class="subtitle">Welcome back, Bogart! Here is your productivity breakdown.</p>
             </div>
-            <button id="closeCustomizer" class="icon-button" aria-label="Close customization">×</button>
-          </header>
+            <div class="streak-badge">🔥 5 Day Streak</div>
+          </div>
 
-          <div class="customizer-login">
-            <label for="loginEmail">Email login</label>
-            <div class="login-row">
-              <input type="email" id="loginEmail" placeholder="you@example.com" />
-              <button id="loginButton" class="primary" type="button">Login</button>
+          <!-- Top Stats Row -->
+          <div class="stats-row">
+            <div class="stat-card">
+              <div class="stat-num">25</div>
+              <div class="stat-label">TOTAL TASKS</div>
             </div>
-            <div class="login-status" id="loginStatus">Not signed in</div>
-            <button id="logoutButton" class="secondary" type="button">Logout</button>
+            <div class="stat-card stat-progress">
+              <div class="stat-num">48%</div>
+              <div class="stat-label">COMPLETION</div>
+              <div class="progress-track"><div class="progress-bar" style="width: 48%;"></div></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-num text-success">12</div>
+              <div class="stat-label">TASKS DONE</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-num text-warning">13</div>
+              <div class="stat-label">REMAINING</div>
+            </div>
           </div>
 
-          <div class="customizer-control">
-            <label for="bgColor">Page background</label>
-            <input type="color" id="bgColor" value="#f4f7fb" />
-          </div>
-          <div class="customizer-control">
-            <label for="cardColor">Card background</label>
-            <input type="color" id="cardColor" value="#ffffff" />
-          </div>
-          <div class="customizer-control">
-            <label for="accentColor">Accent color</label>
-            <input type="color" id="accentColor" value="#2563eb" />
-          </div>
-          <div class="customizer-control">
-            <label for="textColor">Text color</label>
-            <input type="color" id="textColor" value="#1f2937" />
-          </div>
-          <div class="customizer-control">
-            <label for="imageUrl">Background image URL</label>
-            <input type="url" id="imageUrl" placeholder="https://example.com/image.jpg" />
-          </div>
-          <div class="customizer-control">
-            <label for="imageFile">Upload background image</label>
-            <input type="file" id="imageFile" accept="image/*" />
-          </div>
+          <!-- Main Dashboard Grid -->
+          <div class="dashboard-grid">
+            <!-- Left: Calendar Widget -->
+            <div class="card calendar-card">
+              <div class="calendar-header">
+                <h3>May 2026</h3>
+                <div class="cal-nav">
+                  <span>&lt;</span>
+                  <span>&gt;</span>
+                </div>
+              </div>
+              <div class="calendar-grid-header">
+                <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+              </div>
+              <div class="calendar-days" id="calendarDays">
+                <!-- Generated dynamically by JS -->
+              </div>
+            </div>
 
-          <div class="customizer-actions">
-            <button id="resetCustomizer" class="secondary" type="button">Reset defaults</button>
-            <button id="saveCustomizer" class="primary" type="button">Save settings</button>
-            <button id="doneCustomizer" class="secondary" type="button">Done</button>
+            <!-- Middle: Graphs & Activity -->
+            <div class="card graph-card">
+              <h3>Task Completion</h3>
+              <div class="pie-chart-wrapper">
+                <div class="css-pie"></div>
+                <div class="chart-legend">
+                  <div><span class="dot done"></span> Tasks Done (48%)</div>
+                  <div><span class="dot left"></span> Tasks Left (52%)</div>
+                </div>
+              </div>
+
+              <h4 class="subhead">Weekly Activity</h4>
+              <div class="weekly-bars">
+                <div class="bar-col"><div class="bar" style="height: 60%;"></div><span>M</span></div>
+                <div class="bar-col"><div class="bar" style="height: 85%;"></div><span>T</span></div>
+                <div class="bar-col"><div class="bar active" style="height: 100%;"></div><span>W</span></div>
+                <div class="bar-col"><div class="bar" style="height: 90%;"></div><span>TH</span></div>
+                <div class="bar-col"><div class="bar" style="height: 40%;"></div><span>F</span></div>
+              </div>
+            </div>
+
+            <!-- Right: Smart Tips & Shortcuts -->
+            <div class="card tips-card">
+              <div class="card-tag">THIS IS FOR YOU!</div>
+              <div class="tip-box">
+                <strong>TIP #1</strong>
+                <p>Tackle your hardest task first — worry less in the end.</p>
+              </div>
+              <div class="tip-box">
+                <strong>TIP #2</strong>
+                <p>Break Subject 5 into one task per day to avoid cramming.</p>
+              </div>
+              <div class="tip-box">
+                <strong>TIP #3</strong>
+                <p>You're most productive mid-week. Block time on Tue–Thu.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW: TO-DO LIST -->
+        <section class="view-panel" id="view-todos">
+          <div class="view-header">
+            <h2>To-Do List</h2>
+            <button class="primary btn-add-task" onclick="document.getElementById('openCreateModal').click()">+ Add Task</button>
+          </div>
+          <div class="todo-subjects-grid" id="todoSubjectsContainer">
+            <!-- Populated with Subjects and Tasks -->
+          </div>
+        </section>
+
+        <!-- VIEW: TASKS DUE TODAY -->
+        <section class="view-panel" id="view-due-today">
+          <div class="view-header">
+            <h2>Tasks Due Today <span>(May 4, 2026)</span></h2>
+            <span class="badge-alert">Priority Focus</span>
+          </div>
+          <div class="due-list">
+            <div class="due-item priority-high">
+              <input type="checkbox" id="due1">
+              <label for="due1">
+                <strong>Assignment 1 - Subject 1</strong>
+                <p>Duty • Due 11:59 P.M.</p>
+              </label>
+            </div>
+            <div class="due-item">
+              <input type="checkbox" id="due2">
+              <label for="due2">
+                <strong>Subject 2</strong>
+                <p>Quiz • Due 1:00 P.M.</p>
+              </label>
+            </div>
+            <div class="due-item">
+              <input type="checkbox" id="due3">
+              <label for="due3">
+                <strong>Subject 3</strong>
+                <p>Quiz • Due 8:00 P.M.</p>
+              </label>
+            </div>
+            <div class="due-item">
+              <input type="checkbox" id="due4">
+              <label for="due4">
+                <strong>Subject 3</strong>
+                <p>Notes • Due 10:00 P.M.</p>
+              </label>
+            </div>
+            <div class="due-item">
+              <input type="checkbox" id="due5">
+              <label for="due5">
+                <strong>Subject 3</strong>
+                <p>Assignment • Due 10:00 P.M.</p>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW: SUBJECTS OVERVIEW -->
+        <section class="view-panel" id="view-subjects">
+          <div class="view-header">
+            <h2>Subjects Overview</h2>
+            <button class="primary" id="btnAddNewSubject">+ Add Subject</button>
+          </div>
+          <div class="subject-folders-grid" id="subjectCardsList">
+            <!-- Cards rendered dynamically -->
+          </div>
+        </section>
+
+        <!-- VIEW: INBOX & DUTY NOTEBOOK -->
+        <section class="view-panel" id="view-inbox">
+          <div class="view-header">
+            <h2>Inbox & Notifications</h2>
+          </div>
+          <div class="inbox-grid">
+            <div class="card">
+              <h3>Lab Activities</h3>
+              <ul class="clean-list">
+                <li>📘 Information and Notes Study Time</li>
+                <li>📝 Upcoming Exams</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>Calendar Alerts</h3>
+              <ul class="clean-list">
+                <li>⏰ Pending Due Date: Bio-Ethics Paper</li>
+                <li>📅 Class Schedule Updates</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>To-Do List Updates</h3>
+              <ul class="clean-list">
+                <li>✨ Sub-task Deadline created</li>
+                <li>🔄 Nursing Care Plan Sync complete</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>Duty Notebook</h3>
+              <ul class="clean-list">
+                <li>🏥 Ward Rounds Shift Schedule</li>
+                <li>📋 Vital Signs Monitoring Notes</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW: NOTEBOOK -->
+        <section class="view-panel" id="view-notebook">
+          <div class="view-header">
+            <h2>Notebooks & Lesson Notes</h2>
+            <button class="primary">+ New Note</button>
+          </div>
+          <div class="notebook-grid">
+            <div class="note-card">
+              <h3>Lesson Notes</h3>
+              <p>Pharmacology dosage calculation formulas and drug interaction charts.</p>
+              <span class="note-date">Updated 2 hrs ago</span>
+            </div>
+            <div class="note-card">
+              <h3>Duty Notes</h3>
+              <p>Operating room scrub techniques and surgical instruments checklist.</p>
+              <span class="note-date">Updated Yesterday</span>
+            </div>
+            <div class="note-card">
+              <h3>Extracurricular Notes</h3>
+              <p>Student council meeting notes for the upcoming health awareness week.</p>
+              <span class="note-date">Updated May 1</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW: RECENTLY VISITED -->
+        <section class="view-panel" id="view-recently-visited">
+          <div class="view-header">
+            <h2>Recently Visited</h2>
+          </div>
+          <div class="recent-list">
+            <div class="card recent-item">
+              <div>
+                <strong>Subject 1 (Total: 5 | Done: 2)</strong>
+                <p>Last opened: 10 minutes ago</p>
+              </div>
+              <button class="secondary btn-sm" onclick="switchView('subjects')">Open</button>
+            </div>
+            <div class="card recent-item">
+              <div>
+                <strong>Inbox - Lab Activities</strong>
+                <p>Information and Notes Study Time</p>
+              </div>
+              <button class="secondary btn-sm" onclick="switchView('inbox')">Open</button>
+            </div>
+            <div class="card recent-item">
+              <div>
+                <strong>Duty Notebook</strong>
+                <p>Upcoming Clinical Exams</p>
+              </div>
+              <button class="secondary btn-sm" onclick="switchView('notebook')">Open</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW: SETTINGS -->
+        <section class="view-panel" id="view-settings">
+          <div class="view-header">
+            <h2>Account Settings</h2>
+          </div>
+          <div class="settings-sections">
+            <div class="card settings-group">
+              <h3>Account</h3>
+              <p class="desc">Manage your personal information and security</p>
+              <div class="setting-row">
+                <span>Profile Details</span>
+                <button class="secondary btn-sm">Edit</button>
+              </div>
+              <div class="setting-row">
+                <span>Password and Security</span>
+                <button class="secondary btn-sm">Update</button>
+              </div>
+              <div class="setting-row">
+                <span>Switch Account</span>
+                <button class="secondary btn-sm">Switch</button>
+              </div>
+            </div>
+
+            <div class="card settings-group">
+              <h3>Notifications</h3>
+              <p class="desc">Control task reminders and sound cues</p>
+              <label class="toggle-row">
+                <span>Task Reminders</span>
+                <input type="checkbox" checked />
+              </label>
+              <label class="toggle-row">
+                <span>Deadline Alerts</span>
+                <input type="checkbox" checked />
+              </label>
+              <label class="toggle-row">
+                <span>Alert Sounds</span>
+                <input type="checkbox" />
+              </label>
+            </div>
+
+            <div class="card settings-group">
+              <h3>Task & Progress</h3>
+              <p class="desc">Control how your tasks work</p>
+              <label class="toggle-row">
+                <span>Progress Bar Display</span>
+                <input type="checkbox" checked />
+              </label>
+              <label class="toggle-row">
+                <span>Completion Popup</span>
+                <input type="checkbox" checked />
+              </label>
+              <label class="toggle-row">
+                <span>Color-coded Deadlines</span>
+                <input type="checkbox" checked />
+              </label>
+            </div>
+
+            <div class="card settings-group">
+              <h3>Accessibility & Focus</h3>
+              <p class="desc">Improve focus and accessibility</p>
+              <label class="toggle-row">
+                <span>Focus Mode</span>
+                <input type="checkbox" />
+              </label>
+              <label class="toggle-row">
+                <span>Focus Timer (Pomodoro)</span>
+                <input type="checkbox" checked />
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW: FEEDBACK -->
+        <section class="view-panel" id="view-feedback">
+          <div class="view-header">
+            <h2>Customer Feedback</h2>
+            <p>Let us know what's on your mind!</p>
+          </div>
+          <div class="card form-card">
+            <label for="feedbackText">Write feedback here...</label>
+            <textarea id="feedbackText" rows="5" placeholder="Tell us how we can improve TickTock..."></textarea>
+            
+            <div class="rating-box">
+              <span>App Rating:</span>
+              <div class="stars">⭐⭐⭐⭐⭐</div>
+            </div>
+
+            <div class="actions">
+              <button class="primary" onclick="alert('Thank you for your feedback!')">Submit</button>
+              <button class="secondary">Terms of Service</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW: HELP -->
+        <section class="view-panel" id="view-help">
+          <div class="view-header">
+            <h2>Help & Support</h2>
+            <p>Hi, how can we help you today?</p>
+          </div>
+          <div class="card form-card">
+            <label for="helpConcern">Write your concern here...</label>
+            <textarea id="helpConcern" rows="4" placeholder="Describe the issue you're experiencing..."></textarea>
+            <button class="primary" onclick="alert('Your concern has been submitted.')">Submit</button>
+          </div>
+          <div class="faq-links">
+            <div class="card link-card">🔒 Privacy and Security</div>
+            <div class="card link-card">❓ Frequently Asked Questions</div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL: CREATE NEW TASK -->
+  <div class="modal-overlay" id="createTaskModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Create New Task</h3>
+        <button class="close-modal" id="closeCreateModal">&times;</button>
+      </div>
+      <form id="createTaskForm">
+        <div class="form-group">
+          <label for="taskTitle">Task Title</label>
+          <input type="text" id="taskTitle" placeholder="Add a title..." required />
+        </div>
+
+        <div class="form-group">
+          <label for="taskDetails">Details</label>
+          <textarea id="taskDetails" rows="2" placeholder="Add details about your task..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Set Deadline (Selected: <span id="selectedDateText">Monday, May 4, 2026</span>)</label>
+          <!-- Mini Month Grid for May 2026 -->
+          <div class="mini-calendar" id="modalCalendarDays">
+            <!-- Rendered by JS -->
           </div>
         </div>
-      </section>
 
-      <section class="stats">
-        <div class="card stat">
-          <strong>7</strong>
-          <span>Days planned</span>
+        <div class="form-group">
+          <label for="taskSubject">Subject Folder</label>
+          <select id="taskSubject">
+            <option value="Subject 1">Subject 1</option>
+            <option value="Subject 2">Subject 2</option>
+            <option value="Subject 3">Subject 3</option>
+            <option value="Subject 4">Subject 4</option>
+            <option value="Subject 5">Subject 5</option>
+          </select>
         </div>
-        <div class="card stat">
-          <strong>12</strong>
-          <span>Upcoming items</span>
+
+        <div class="modal-actions">
+          <button type="button" class="secondary" id="cancelCreateModal">Cancel</button>
+          <button type="submit" class="primary">Create Task</button>
         </div>
-        <div class="card stat">
-          <strong>85%</strong>
-          <span>On track</span>
-        </div>
-      </section>
+      </form>
     </div>
+  </div>
 
-    <script src="script.js"></script>
-  </body>
+  <!-- CUSTOMIZER DRAWER (Integrated from wireframe) -->
+  <div class="customizer" id="customizer" aria-hidden="true">
+    <div class="customizer-panel">
+      <header>
+        <div>
+          <h2>Customize Layout</h2>
+          <p>Personalize colors, background, and dark mode.</p>
+        </div>
+        <button id="closeCustomizer" class="icon-button" aria-label="Close">&times;</button>
+      </header>
+
+      <div class="customizer-login">
+        <label for="loginEmail"><strong>Student Profile Sync</strong></label>
+        <div class="login-row">
+          <input type="email" id="loginEmail" placeholder="bogart@university.edu" />
+          <button id="loginButton" class="primary" type="button">Sync</button>
+        </div>
+        <div class="login-status" id="loginStatus">Profile loaded</div>
+      </div>
+
+      <div class="customizer-control">
+        <label class="toggle-row">
+          <span>Dark Mode</span>
+          <input type="checkbox" id="darkModeToggle" />
+        </label>
+      </div>
+
+      <div class="customizer-control">
+        <label for="bgColor">Page Background</label>
+        <input type="color" id="bgColor" value="#f8fafc" />
+      </div>
+      <div class="customizer-control">
+        <label for="cardColor">Card Background</label>
+        <input type="color" id="cardColor" value="#ffffff" />
+      </div>
+      <div class="customizer-control">
+        <label for="accentColor">Accent Color</label>
+        <input type="color" id="accentColor" value="#2563eb" />
+      </div>
+      <div class="customizer-control">
+        <label for="textColor">Text Color</label>
+        <input type="color" id="textColor" value="#1e293b" />
+      </div>
+      <div class="customizer-control">
+        <label for="imageUrl">Background Image URL</label>
+        <input type="url" id="imageUrl" placeholder="https://..." />
+      </div>
+      <div class="customizer-control">
+        <label for="imageFile">Upload Background Image</label>
+        <input type="file" id="imageFile" accept="image/*" />
+      </div>
+
+      <div class="customizer-actions">
+        <button id="resetCustomizer" class="secondary" type="button">Reset Defaults</button>
+        <button id="saveCustomizer" class="primary" type="button">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
 </html>

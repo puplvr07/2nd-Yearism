@@ -1,352 +1,210 @@
-const days = [
-  { name: 'Mon', task: 'Design review' },
-  { name: 'Tue', task: 'Project sync' },
-  { name: 'Wed', task: 'Focus block' },
-  { name: 'Thu', task: 'Client call' },
-  { name: 'Fri', task: 'Wrap-up tasks' },
-  { name: 'Sat', task: 'Gym + errands' },
-  { name: 'Sun', task: 'Reset week' }
-];
-
-const weekGrid = document.getElementById('weekGrid');
-const todayDate = document.getElementById('todayDate');
-const openCustomizer = document.getElementById('openCustomizer');
-const customizer = document.getElementById('customizer');
-const closeCustomizer = document.getElementById('closeCustomizer');
-const bgColor = document.getElementById('bgColor');
-const cardColor = document.getElementById('cardColor');
-const accentColor = document.getElementById('accentColor');
-const textColor = document.getElementById('textColor');
-const imageUrl = document.getElementById('imageUrl');
-const imageFile = document.getElementById('imageFile');
-const resetCustomizer = document.getElementById('resetCustomizer');
-const doneCustomizer = document.getElementById('doneCustomizer');
-const saveCustomizer = document.getElementById('saveCustomizer');
-const loginEmail = document.getElementById('loginEmail');
-const loginButton = document.getElementById('loginButton');
-const logoutButton = document.getElementById('logoutButton');
-const loginStatus = document.getElementById('loginStatus');
-
-const defaultTheme = {
-  bg: '#f4f7fb',
-  card: '#ffffff',
-  text: '#1f2937',
-  accent: '#2563eb',
-  imageUrl: '',
-  imageData: ''
+// State Management
+const state = {
+  activeView: 'dashboard',
+  selectedDate: '2026-05-04',
+  subjects: [
+    { id: 1, name: 'Subject 1', tasks: [{ id: 1, title: 'Quiz 1', done: true }, { id: 2, title: 'Presentation 2', done: true }, { id: 3, title: 'Task 3', done: false }, { id: 4, title: 'Activity 4', done: false }, { id: 5, title: 'Exam 5', done: false }] },
+    { id: 2, name: 'Subject 2', tasks: [{ id: 6, title: 'Quiz 1', done: true }, { id: 7, title: 'Presentation 2', done: true }, { id: 8, title: 'Task 3', done: true }, { id: 9, title: 'Lab 4', done: true }, { id: 10, title: 'Paper 5', done: false }] },
+    { id: 3, name: 'Subject 3', tasks: [{ id: 11, title: 'Quiz 1', done: true }, { id: 12, title: 'Presentation 2', done: false }, { id: 13, title: 'Task 3', done: false }, { id: 14, title: 'Readings', done: false }, { id: 15, title: 'Summary', done: false }] },
+    { id: 4, name: 'Subject 4', tasks: [{ id: 16, title: 'Quiz 1', done: true }, { id: 17, title: 'Presentation 2', done: true }, { id: 18, title: 'Task 3', done: true }, { id: 19, title: 'Case Study', done: true }, { id: 20, title: 'Final Report', done: true }] },
+    { id: 5, name: 'Subject 5', tasks: [{ id: 21, title: 'Quiz 1', done: false }, { id: 22, title: 'Presentation 2', done: false }, { id: 23, title: 'Task 3', done: false }, { id: 24, title: 'Duty Log', done: false }, { id: 25, title: 'Reflection', done: false }] }
+  ]
 };
 
-const theme = { ...defaultTheme };
-let currentUser = null;
-
-// --- Storage availability check -------------------------------------
-// localStorage can silently fail (or reset between sessions) if the page
-// is opened as a local file in some browsers, viewed inside a sandboxed
-// preview/iframe, or opened in a private/incognito window. Detect that
-// up front so we can tell the user instead of quietly losing their data.
-function isStorageAvailable() {
-  try {
-    const testKey = '__planner_storage_test__';
-    localStorage.setItem(testKey, '1');
-    localStorage.removeItem(testKey);
-    return true;
-  } catch (err) {
-    return false;
+// Navigation
+function switchView(viewName) {
+  document.querySelectorAll('.view-panel').forEach(panel => panel.classList.remove('active'));
+  const target = document.getElementById(`view-${viewName}`);
+  if (target) {
+    target.classList.add('active');
+    state.activeView = viewName;
   }
-}
-
-const storageAvailable = isStorageAvailable();
-
-const today = new Date();
-const options = { weekday: 'long', month: 'long', day: 'numeric' };
-todayDate.textContent = today.toLocaleDateString('en-US', options);
-
-const todayIndex = (today.getDay() + 6) % 7;
-
-// --- Task customization -----------------------------------------------
-const TASKS_KEY = 'planner-tasks';
-
-function loadTasks() {
-  const fallback = days.map((d) => d.task);
-  if (!storageAvailable) return fallback;
-  try {
-    const stored = localStorage.getItem(TASKS_KEY);
-    if (!stored) return fallback;
-    const parsed = JSON.parse(stored);
-    if (Array.isArray(parsed) && parsed.length === days.length) return parsed;
-    return fallback;
-  } catch (err) {
-    console.error('Failed to load saved tasks', err);
-    return fallback;
-  }
-}
-
-function saveTasks(tasks) {
-  if (!storageAvailable) return;
-  try {
-    localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
-  } catch (err) {
-    console.error('Failed to save tasks', err);
-  }
-}
-
-let taskValues = loadTasks();
-
-days.forEach((day, index) => {
-  const card = document.createElement('div');
-  card.className = 'day' + (index === todayIndex ? ' today' : '');
-  card.innerHTML = `
-    <div class="day-name">${day.name}</div>
-    <div class="task" contenteditable="true" spellcheck="false" data-index="${index}" title="Click to edit">${taskValues[index]}</div>
-  `;
-
-  card.addEventListener('click', () => {
-    weekGrid.querySelectorAll('.day').forEach((item) => item.classList.remove('selected'));
-    card.classList.add('selected');
+  
+  document.querySelectorAll('.sidebar-nav .nav-item').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.view === viewName);
   });
 
-  const taskEl = card.querySelector('.task');
+  // Close mobile sidebar if open
+  document.getElementById('sidebar').classList.remove('open');
+}
 
-  // Don't let editing the task text also trigger card selection weirdness
-  taskEl.addEventListener('click', (event) => event.stopPropagation());
+// Render Calendar Days
+function renderCalendar() {
+  const container = document.getElementById('calendarDays');
+  if (!container) return;
+  container.innerHTML = '';
+  
+  // May 2026 starts on Friday (5 dummy days before)
+  for (let i = 26; i <= 30; i++) {
+    container.innerHTML += `<div class="cal-day muted">${i}</div>`;
+  }
+  for (let d = 1; d <= 31; d++) {
+    const isToday = d === 4;
+    container.innerHTML += `<div class="cal-day ${isToday ? 'today' : ''}">${d}</div>`;
+  }
+}
 
-  taskEl.addEventListener('blur', () => {
-    const idx = Number(taskEl.dataset.index);
-    const value = taskEl.textContent.trim() || day.task;
-    taskValues[idx] = value;
-    taskEl.textContent = value;
-    saveTasks(taskValues);
+// Render Mini Calendar in Modal
+function renderModalCalendar() {
+  const container = document.getElementById('modalCalendarDays');
+  if (!container) return;
+  container.innerHTML = '';
+  for (let d = 1; d <= 31; d++) {
+    const isSelected = d === 4;
+    const dayEl = document.createElement('div');
+    dayEl.className = `mini-cal-day ${isSelected ? 'selected' : ''}`;
+    dayEl.textContent = d;
+    dayEl.addEventListener('click', () => {
+      document.querySelectorAll('.mini-cal-day').forEach(el => el.classList.remove('selected'));
+      dayEl.classList.add('selected');
+      document.getElementById('selectedDateText').textContent = `Monday, May ${d}, 2026`;
+    });
+    container.appendChild(dayEl);
+  }
+}
+
+// Render Subject Cards
+function renderSubjects() {
+  const list = document.getElementById('subjectCardsList');
+  const todoList = document.getElementById('todoSubjectsContainer');
+  if (!list || !todoList) return;
+
+  list.innerHTML = '';
+  todoList.innerHTML = '';
+
+  state.subjects.forEach(sub => {
+    const total = sub.tasks.length;
+    const done = sub.tasks.filter(t => t.done).length;
+    const left = total - done;
+
+    // Subjects Overview Card
+    list.innerHTML += `
+      <div class="subject-card">
+        <header>
+          <h3>${sub.name}</h3>
+          <span class="badge">${done}/${total} Done</span>
+        </header>
+        <p><strong>TOTAL TASKS:</strong> ${total}</p>
+        <p><strong>TASK DONE:</strong> ${done}</p>
+        <p><strong>TASK LEFT:</strong> ${left}</p>
+        <div class="progress-track">
+          <div class="progress-bar" style="width: ${(done / total) * 100}%;"></div>
+        </div>
+      </div>
+    `;
+
+    // To-Do Screen Item
+    let taskRows = sub.tasks.map(t => `
+      <li>
+        <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask(${sub.id}, ${t.id})">
+        <span style="${t.done ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${t.title}</span>
+      </li>
+    `).join('');
+
+    todoList.innerHTML += `
+      <div class="subject-card">
+        <header>
+          <h3>${sub.name}</h3>
+        </header>
+        <ul class="subject-task-list">
+          ${taskRows}
+        </ul>
+      </div>
+    `;
+  });
+}
+
+function toggleTask(subjectId, taskId) {
+  const sub = state.subjects.find(s => s.id === subjectId);
+  if (!sub) return;
+  const task = sub.tasks.find(t => t.id === taskId);
+  if (task) {
+    task.done = !task.done;
+    renderSubjects();
+  }
+}
+
+// Global Event Listeners & Initialization
+document.addEventListener('DOMContentLoaded', () => {
+  renderCalendar();
+  renderModalCalendar();
+  renderSubjects();
+
+  // Navigation clicks
+  document.querySelectorAll('.sidebar-nav .nav-item[data-view]').forEach(btn => {
+    btn.addEventListener('click', () => switchView(btn.dataset.view));
   });
 
-  taskEl.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      taskEl.blur();
+  // Mobile menu toggle
+  document.getElementById('menuToggle').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.toggle('open');
+  });
+
+  // Search input focus & search dropdown actions
+  const searchInput = document.getElementById('globalSearch');
+  const searchDropdown = document.getElementById('searchDropdown');
+
+  searchInput.addEventListener('focus', () => searchDropdown.classList.add('open'));
+  document.addEventListener('click', (e) => {
+    if (!searchInput.contains(e.target) && !searchDropdown.contains(e.target)) {
+      searchDropdown.classList.remove('open');
     }
   });
 
-  weekGrid.appendChild(card);
-});
+  searchDropdown.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      searchDropdown.classList.remove('open');
+      if (link.dataset.view) switchView(link.dataset.view);
+      if (link.dataset.modal === 'create') document.getElementById('createTaskModal').classList.add('open');
+      if (link.dataset.action === 'customizer') document.getElementById('customizer').classList.add('open');
+    });
+  });
 
-function applyTheme() {
-  const root = document.documentElement;
-  root.style.setProperty('--bg', theme.bg);
-  root.style.setProperty('--card', theme.card);
-  root.style.setProperty('--text', theme.text);
-  root.style.setProperty('--accent', theme.accent);
-  root.style.setProperty('--accent-soft', hexToSoft(theme.accent));
+  // Create Task Modal Handling
+  const modal = document.getElementById('createTaskModal');
+  document.getElementById('openCreateModal').addEventListener('click', () => modal.classList.add('open'));
+  document.getElementById('closeCreateModal').addEventListener('click', () => modal.classList.remove('open'));
+  document.getElementById('cancelCreateModal').addEventListener('click', () => modal.classList.remove('open'));
 
-  const pageBg = `linear-gradient(135deg, rgba(238, 244, 255, 0.9), ${theme.bg})`;
-  root.style.setProperty('--page-bg', pageBg);
-
-  if (theme.imageData) {
-    root.style.setProperty('--page-bg-image', `url('${theme.imageData}')`);
-  } else if (theme.imageUrl) {
-    root.style.setProperty('--page-bg-image', `url('${theme.imageUrl}')`);
-  } else {
-    root.style.setProperty('--page-bg-image', 'none');
-  }
-}
-
-function hexToSoft(hex) {
-  if (!hex || hex[0] !== '#') return 'rgba(219, 234, 254, 0.15)';
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, 0.15)`;
-}
-
-function getStorageKey(email) {
-  return `planner-customizations:${email.toLowerCase()}`;
-}
-
-function getCurrentUserKey() {
-  return 'planner-current-user';
-}
-
-function validateEmail(value) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}
-
-function updateThemeProperty(property, value) {
-  theme[property] = value;
-  applyTheme();
-  if (currentUser) saveThemeForUser();
-}
-
-function saveThemeForUser() {
-  if (!currentUser) return false;
-  if (!storageAvailable) {
-    setLoginStatus('Storage is blocked in this browser/session, so settings will only last until you leave this page.', true);
-    return false;
-  }
-  try {
-    // save theme data for the user
-    localStorage.setItem(getStorageKey(currentUser), JSON.stringify(theme));
-    // also persist who is currently signed in
-    localStorage.setItem(getCurrentUserKey(), currentUser);
-    return true;
-  } catch (err) {
-    console.error('Failed to save theme to localStorage', err);
-    setLoginStatus('Could not save settings (storage full or blocked).', true);
-    return false;
-  }
-}
-
-function loadUserTheme(email) {
-  if (!storageAvailable) return false;
-  try {
-    const stored = localStorage.getItem(getStorageKey(email));
-    if (!stored) return false;
-    const saved = JSON.parse(stored);
-    Object.assign(theme, { ...defaultTheme, ...saved });
-    return true;
-  } catch (err) {
-    console.error('Failed to load saved theme', err);
-    return false;
-  }
-}
-
-function setCustomizerInputs() {
-  bgColor.value = theme.bg;
-  cardColor.value = theme.card;
-  accentColor.value = theme.accent;
-  textColor.value = theme.text;
-  imageUrl.value = theme.imageUrl;
-  imageFile.value = '';
-}
-
-function setLoginStatus(message, isError = false) {
-  loginStatus.textContent = message;
-  loginStatus.style.color = isError ? '#b91c1c' : 'var(--text)';
-}
-
-function openPanel() {
-  setCustomizerInputs();
-  customizer.classList.add('open');
-  customizer.setAttribute('aria-hidden', 'false');
-}
-
-function closePanel() {
-  customizer.classList.remove('open');
-  customizer.setAttribute('aria-hidden', 'true');
-}
-
-function loginUser() {
-  const email = loginEmail.value.trim().toLowerCase();
-  if (!validateEmail(email)) {
-    setLoginStatus('Enter a valid email address.', true);
-    return;
-  }
-
-  if (!storageAvailable) {
-    // Still let them "sign in" for this session so the rest of the UI works,
-    // but be upfront that nothing will persist.
-    currentUser = email;
-    applyTheme();
-    setCustomizerInputs();
-    setLoginStatus(`Signed in as ${currentUser} (storage blocked — this won't be remembered next time).`, true);
-    return;
-  }
-
-  currentUser = email;
-  // persist current user immediately so reloads can detect signed-in user
-  try {
-    localStorage.setItem(getCurrentUserKey(), currentUser);
-  } catch (err) {
-    console.error('Failed to persist current user', err);
-  }
-
-  loadUserTheme(currentUser);
-  applyTheme();
-  setCustomizerInputs();
-  const saved = saveThemeForUser();
-  if (saved) setLoginStatus(`Signed in as ${currentUser}`);
-}
-
-function logoutUser() {
-  currentUser = null;
-  if (storageAvailable) {
-    try {
-      localStorage.removeItem(getCurrentUserKey());
-    } catch (err) {
-      console.error('Failed to clear current user', err);
+  document.getElementById('createTaskForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const title = document.getElementById('taskTitle').value;
+    const subjectName = document.getElementById('taskSubject').value;
+    const targetSub = state.subjects.find(s => s.name === subjectName);
+    
+    if (targetSub && title.trim()) {
+      targetSub.tasks.push({ id: Date.now(), title: title.trim(), done: false });
+      renderSubjects();
+      modal.classList.remove('open');
+      document.getElementById('createTaskForm').reset();
+      switchView('todos');
     }
-  }
-  setLoginStatus('Not signed in');
-}
+  });
 
-function saveSettings() {
-  if (!currentUser) {
-    setLoginStatus('Login first to save your settings.', true);
-    return;
-  }
-  const saved = saveThemeForUser();
-  if (saved) setLoginStatus(`Settings saved for ${currentUser}`);
-}
+  // Customizer Drawer Handling
+  const customizer = document.getElementById('customizer');
+  document.getElementById('openCustomizerBtn').addEventListener('click', () => customizer.classList.add('open'));
+  document.getElementById('closeCustomizer').addEventListener('click', () => customizer.classList.remove('open'));
 
-function resetTheme() {
-  Object.assign(theme, defaultTheme);
-  applyTheme();
-  setCustomizerInputs();
-  if (currentUser) saveThemeForUser();
-}
-
-function loadCurrentUser() {
-  if (!storageAvailable) {
-    setLoginStatus('Storage is blocked in this browser/session — logins and settings won\u2019t be saved here.', true);
-    return;
-  }
-  let stored = null;
-  try {
-    stored = localStorage.getItem(getCurrentUserKey());
-  } catch (err) {
-    console.error('Failed to read current user', err);
-  }
-  if (!stored) {
-    setLoginStatus('Not signed in');
-    return;
-  }
-  currentUser = stored;
-  loadUserTheme(currentUser);
-  applyTheme();
-  setCustomizerInputs();
-  loginEmail.value = currentUser;
-  setLoginStatus(`Signed in as ${currentUser}`);
-}
-
-openCustomizer.addEventListener('click', openPanel);
-closeCustomizer.addEventListener('click', closePanel);
-doneCustomizer.addEventListener('click', closePanel);
-resetCustomizer.addEventListener('click', resetTheme);
-saveCustomizer.addEventListener('click', saveSettings);
-loginButton.addEventListener('click', loginUser);
-logoutButton.addEventListener('click', logoutUser);
-
-bgColor.addEventListener('input', (event) => updateThemeProperty('bg', event.target.value));
-cardColor.addEventListener('input', (event) => updateThemeProperty('card', event.target.value));
-accentColor.addEventListener('input', (event) => updateThemeProperty('accent', event.target.value));
-textColor.addEventListener('input', (event) => updateThemeProperty('text', event.target.value));
-
-imageUrl.addEventListener('change', (event) => {
-  theme.imageUrl = event.target.value.trim();
-  theme.imageData = '';
-  applyTheme();
-  if (currentUser) saveThemeForUser();
+  // Customizer inputs
+  document.getElementById('darkModeToggle').addEventListener('change', (e) => {
+    document.body.classList.toggle('dark-mode', e.target.checked);
+  });
+  document.getElementById('bgColor').addEventListener('input', (e) => {
+    document.documentElement.style.setProperty('--page-bg', e.target.value);
+  });
+  document.getElementById('cardColor').addEventListener('input', (e) => {
+    document.documentElement.style.setProperty('--card', e.target.value);
+  });
+  document.getElementById('accentColor').addEventListener('input', (e) => {
+    document.documentElement.style.setProperty('--accent', e.target.value);
+  });
+  document.getElementById('textColor').addEventListener('input', (e) => {
+    document.documentElement.style.setProperty('--text', e.target.value);
+  });
+  document.getElementById('saveCustomizer').addEventListener('click', () => {
+    alert('Theme preferences saved successfully!');
+    customizer.classList.remove('open');
+  });
 });
-
-imageFile.addEventListener('change', (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    theme.imageData = reader.result;
-    theme.imageUrl = '';
-    applyTheme();
-    if (currentUser) saveThemeForUser();
-  };
-  reader.readAsDataURL(file);
-});
-
-loadCurrentUser();
-applyTheme();
