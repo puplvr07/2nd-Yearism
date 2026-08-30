@@ -19,6 +19,10 @@ const STORAGE_KEY_USER = 'ticktock_user';
      VS Code Live Server, `npx serve`, or Python `python -m http.server` all work.
 */
 const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+const GOOGLE_REDIRECT_URI =
+  window.location.origin && window.location.origin !== 'null'
+    ? window.location.origin
+    : 'http://localhost:5500';
 
 // Default initial data matching the wireframe
 const defaultData = {
@@ -199,6 +203,46 @@ function showGoogleSetupHint(message) {
   hint.textContent = message;
 }
 
+function buildGoogleAuthUrl() {
+  const state = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
+  sessionStorage.setItem('google_oauth_state', state);
+
+  const params = new URLSearchParams({
+    client_id: GOOGLE_CLIENT_ID,
+    redirect_uri: GOOGLE_REDIRECT_URI,
+    response_type: 'code',
+    scope: 'openid email profile',
+    access_type: 'offline',
+    prompt: 'consent',
+    state
+  });
+
+  return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+}
+
+function redirectToGoogleLogin() {
+  window.location.href = buildGoogleAuthUrl();
+}
+
+function handleGoogleAuthRedirect() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  const state = params.get('state');
+  const expectedState = sessionStorage.getItem('google_oauth_state');
+
+  if (!code) return;
+
+  if (state && expectedState && state !== expectedState) {
+    showGoogleSetupHint('Google sign-in was interrupted. Please try again.');
+    return;
+  }
+
+  window.history.replaceState({}, '', window.location.pathname);
+  showGoogleSetupHint(
+    'Google redirected back with an auth code. To finish sign-in, add a backend token exchange endpoint to complete the login securely.'
+  );
+}
+
 function initGoogleSignIn() {
   const slot = document.getElementById('googleSignInButton');
   slot.innerHTML = '';
@@ -210,28 +254,15 @@ function initGoogleSignIn() {
     return;
   }
 
-  if (!window.google || !google.accounts || !google.accounts.id) {
-    showGoogleSetupHint('Google Sign-In is still loading. Refresh if the button does not appear.');
-    setTimeout(initGoogleSignIn, 400);
-    return;
-  }
-
   document.getElementById('googleSetupHint').hidden = true;
 
-  google.accounts.id.initialize({
-    client_id: GOOGLE_CLIENT_ID,
-    callback: handleGoogleCredential,
-    auto_select: false,
-    cancel_on_tap_outside: true
-  });
-
-  google.accounts.id.renderButton(slot, {
-    theme: 'outline',
-    size: 'large',
-    text: 'signin_with',
-    shape: 'pill',
-    width: 320
-  });
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'primary';
+  button.textContent = 'Continue with Google';
+  button.style.width = '100%';
+  button.addEventListener('click', redirectToGoogleLogin);
+  slot.appendChild(button);
 }
 
 // Navigation
@@ -455,6 +486,8 @@ function renderApp() {
 
 // Lifecycle Init
 document.addEventListener('DOMContentLoaded', () => {
+  handleGoogleAuthRedirect();
+
   const existingUser = loadUser();
   if (existingUser) {
     unlockApp(existingUser);
