@@ -1,5 +1,24 @@
 // Storage Keys
 const STORAGE_KEY_DATA = 'ticktock_student_data';
+const STORAGE_KEY_USER = 'ticktock_user';
+
+/*
+  Google Sign-In setup (required before the Google button works):
+
+  1. Open https://console.cloud.google.com/
+  2. Create a project (or pick an existing one)
+  3. APIs & Services → OAuth consent screen → External → fill app name + your email
+  4. APIs & Services → Credentials → Create credentials → OAuth client ID → Web application
+  5. Under Authorized JavaScript origins add:
+       http://localhost
+       http://localhost:5500
+       http://127.0.0.1:5500
+     (match the URL you actually open — include the port)
+  6. Paste the Client ID below.
+  7. Serve this folder over http://localhost (not by double-clicking the HTML file).
+     VS Code Live Server, `npx serve`, or Python `python -m http.server` all work.
+*/
+const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
 
 // Default initial data matching the wireframe
 const defaultData = {
@@ -85,6 +104,134 @@ function persistState() {
   } catch (err) {
     console.error('Failed to save state:', err);
   }
+}
+
+function parseJwt(token) {
+  const payload = token.split('.')[1];
+  const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+  return JSON.parse(json);
+}
+
+function isGoogleConfigured() {
+  return GOOGLE_CLIENT_ID && !GOOGLE_CLIENT_ID.startsWith('YOUR_GOOGLE_CLIENT_ID');
+}
+
+function loadUser() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_USER);
+    return raw ? JSON.parse(raw) : null;
+  } catch (err) {
+    return null;
+  }
+}
+
+function saveUser(user) {
+  if (user) localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
+  else localStorage.removeItem(STORAGE_KEY_USER);
+}
+
+function applyUser(user) {
+  const nameEl = document.getElementById('userNameDisplay');
+  const roleEl = document.getElementById('userRoleDisplay');
+  const welcomeEl = document.getElementById('dashWelcome');
+  const statusEl = document.getElementById('loginStatus');
+  const photoEl = document.getElementById('userAvatarImg');
+  const emojiEl = document.getElementById('userAvatarEmoji');
+  const signOutBtn = document.getElementById('signOutBtn');
+
+  if (!user) {
+    nameEl.textContent = 'Guest';
+    roleEl.textContent = 'Not signed in';
+    welcomeEl.textContent = 'Welcome! Here is your productivity breakdown.';
+    statusEl.textContent = 'Not signed in';
+    photoEl.hidden = true;
+    emojiEl.hidden = false;
+    signOutBtn.textContent = 'Sign in';
+    return;
+  }
+
+  const firstName = user.name.split(' ')[0];
+  nameEl.textContent = user.name;
+  roleEl.textContent = user.email || (user.guest ? 'Guest session' : 'Signed in with Google');
+  welcomeEl.textContent = `Welcome back, ${firstName}! Here is your productivity breakdown.`;
+  statusEl.textContent = user.guest ? 'Guest' : `${user.name} (${user.email})`;
+  signOutBtn.textContent = 'Sign out';
+
+  if (user.picture) {
+    photoEl.src = user.picture;
+    photoEl.alt = user.name;
+    photoEl.hidden = false;
+    emojiEl.hidden = true;
+  } else {
+    photoEl.hidden = true;
+    emojiEl.hidden = false;
+  }
+}
+
+function unlockApp(user) {
+  saveUser(user);
+  applyUser(user);
+  document.body.classList.add('app-unlocked');
+  document.getElementById('loginScreen').setAttribute('aria-hidden', 'true');
+}
+
+function lockApp() {
+  saveUser(null);
+  applyUser(null);
+  document.body.classList.remove('app-unlocked');
+  document.getElementById('loginScreen').setAttribute('aria-hidden', 'false');
+  initGoogleSignIn();
+}
+
+function handleGoogleCredential(response) {
+  const profile = parseJwt(response.credential);
+  unlockApp({
+    name: profile.name,
+    email: profile.email,
+    picture: profile.picture,
+    guest: false
+  });
+}
+
+function showGoogleSetupHint(message) {
+  const hint = document.getElementById('googleSetupHint');
+  hint.hidden = false;
+  hint.textContent = message;
+}
+
+function initGoogleSignIn() {
+  const slot = document.getElementById('googleSignInButton');
+  slot.innerHTML = '';
+
+  if (!isGoogleConfigured()) {
+    showGoogleSetupHint(
+      'Add your Google Client ID in script.js (GOOGLE_CLIENT_ID), then open this app from http://localhost — not as a file:// page. See the comment at the top of script.js.'
+    );
+    return;
+  }
+
+  if (!window.google || !google.accounts || !google.accounts.id) {
+    showGoogleSetupHint('Google Sign-In is still loading. Refresh if the button does not appear.');
+    setTimeout(initGoogleSignIn, 400);
+    return;
+  }
+
+  document.getElementById('googleSetupHint').hidden = true;
+
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleGoogleCredential,
+    auto_select: false,
+    cancel_on_tap_outside: true
+  });
+
+  google.accounts.id.renderButton(slot, {
+    theme: 'outline',
+    size: 'large',
+    text: 'signin_with',
+    shape: 'pill',
+    width: 320
+  });
 }
 
 // Navigation
@@ -308,6 +455,29 @@ function renderApp() {
 
 // Lifecycle Init
 document.addEventListener('DOMContentLoaded', () => {
+  const existingUser = loadUser();
+  if (existingUser) {
+    unlockApp(existingUser);
+  } else {
+    applyUser(null);
+    initGoogleSignIn();
+  }
+
+  document.getElementById('continueGuestBtn').addEventListener('click', () => {
+    unlockApp({ name: 'Guest', email: '', picture: '', guest: true });
+  });
+
+  const signOut = () => lockApp();
+  document.getElementById('signOutBtn').addEventListener('click', () => {
+    const user = loadUser();
+    if (!user || user.guest) {
+      lockApp();
+      return;
+    }
+    signOut();
+  });
+  document.getElementById('customizerSignOut').addEventListener('click', signOut);
+
   renderCalendar();
   renderModalCalendar();
   renderApp();

@@ -10,18 +10,36 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
+  <!-- Google Sign-In (requires a Client ID from Google Cloud Console) -->
+  <div class="login-screen" id="loginScreen" aria-hidden="false">
+    <div class="login-card">
+      <div class="logo login-logo">
+        <span class="logo-t">T</span><span class="logo-check">✓</span><span class="logo-rest">CKT</span>
+        <div class="clock-character">🕒</div>
+        <span class="logo-rest">CK</span>
+      </div>
+      <h1>Sign in to T/CKTOCK</h1>
+      <p class="login-copy">Use your Google account so your name and photo show up in the sidebar.</p>
+      <div id="googleSignInButton" class="google-btn-slot"></div>
+      <p class="login-hint" id="googleSetupHint" hidden></p>
+      <button type="button" class="secondary" id="continueGuestBtn">Continue as guest</button>
+    </div>
+  </div>
+
   <div class="app-layout">
     <!-- Collapsible / Floating Sidebar -->
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-user">
         <div class="avatar-wrapper">
-          <div class="avatar-icon">👓</div>
+          <img id="userAvatarImg" class="avatar-photo" alt="" hidden />
+          <div class="avatar-icon" id="userAvatarEmoji">👓</div>
         </div>
         <div class="user-info">
-          <h3 id="userNameDisplay">Bogart Batumbakal</h3>
-          <p id="userRoleDisplay">3rd Year Nursing Student</p>
+          <h3 id="userNameDisplay">Guest</h3>
+          <p id="userRoleDisplay">Not signed in</p>
         </div>
       </div>
 
@@ -107,7 +125,7 @@
           <div class="dashboard-header">
             <div>
               <h2>MAY 04, 2026</h2>
-              <p class="subtitle">Welcome back, Bogart! Here is your productivity breakdown.</p>
+              <p class="subtitle" id="dashWelcome">Welcome back! Here is your productivity breakdown.</p>
             </div>
             <div class="streak-badge">🔥 5 Day Streak</div>
           </div>
@@ -369,8 +387,8 @@
                 <button class="secondary btn-sm">Update</button>
               </div>
               <div class="setting-row">
-                <span>Switch Account</span>
-                <button class="secondary btn-sm">Switch</button>
+                <span>Google Account</span>
+                <button type="button" class="secondary btn-sm" id="signOutBtn">Sign out</button>
               </div>
             </div>
 
@@ -523,12 +541,9 @@
       </header>
 
       <div class="customizer-login">
-        <label for="loginEmail"><strong>Student Profile Sync</strong></label>
-        <div class="login-row">
-          <input type="email" id="loginEmail" placeholder="bogart@university.edu" />
-          <button id="loginButton" class="primary" type="button">Sync</button>
-        </div>
-        <div class="login-status" id="loginStatus">Profile loaded</div>
+        <p><strong>Signed in as</strong></p>
+        <div class="login-status" id="loginStatus">Guest</div>
+        <button type="button" class="secondary" id="customizerSignOut">Sign out</button>
       </div>
 
       <div class="customizer-control">
